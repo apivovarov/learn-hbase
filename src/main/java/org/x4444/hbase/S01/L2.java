@@ -23,33 +23,31 @@ public class L2 {
 
   public static void main(String[] args) {
     L2 l2 = new L2();
-    l2.readValue();
+    String rowKey = "500451373768580";
+    //l2.readValue(rowKey);
 
-    long jan = 1356998400 + 20100 * 60;
-    //l2.writeValues(1000000, 100, jan, 50000);
+    long jan = 1356998400 + 20000 * 60 + 300000 * 60;
+    l2.writeValues(200000, 100, jan, 50000);
   }
 
-  void writeValues(int minutes, int metrics, long startTime, int batch) {
+  void writeValues(int minutes, int metrics, long startTime, int batchSize) {
     Configuration conf = getConf();
     Random r = new Random();
 
+    long t = System.currentTimeMillis();
     HTable t1 = null;
     try {
       t1 = new HTable(conf, Bytes.toBytes("t1"));
-
+      
+      long totalCnt = minutes * metrics;
       long time = startTime - 60L;
-      List<Put> putLi = new ArrayList<Put>(batch * 2);
+      List<Put> putLi = new ArrayList<Put>(batchSize * 2);
+      int batchCnt = 0;
       for (int i = 0; i < minutes; i++) {
         time += 60L;
         for (int j = 0; j < metrics; j++) {
           int mId = 50001 + j;
-          // byte[] key = new byte[10];
-          // byte[] mIdBa = Bytes.toBytes(mId);
-          // byte[] timeBa = Bytes.toBytes(time);
-          // Bytes.putShort(key, 0, mId);
-          // Bytes.putShort(key, 2, time);
           String s = "" + mId + time;
-          // System.out.println(s);
           byte[] key = Bytes.toBytes(s);
 
           int mi = r.nextInt(10000);
@@ -62,12 +60,15 @@ public class L2 {
           put.add(F1, MAX, maxV);
           putLi.add(put);
         }
-        if (putLi.size() == batch) {
+        if (putLi.size() == batchSize) {
           put(t1, putLi, time);
+          batchCnt++;
+          printProgress(totalCnt, batchSize, batchCnt);
         }
       }
       if (putLi.size() > 0) {
         put(t1, putLi, time);
+        printProgress(batchSize, batchSize, 1);
       }
     } catch (IOException e) {
       e.printStackTrace();
@@ -80,6 +81,8 @@ public class L2 {
         }
       }
     }
+    t = System.currentTimeMillis() - t;
+    System.out.printf("Total exec time: %.2f sec\n", t / 1000D);
   }
   
   void put(HTable t1, List<Put> putLi, long ts) throws RetriesExhaustedWithDetailsException, InterruptedIOException {
@@ -90,15 +93,19 @@ public class L2 {
     System.out.println("time: " + t);
     putLi.clear();
   }
+  
+  void printProgress(long totalRows, int batchSize, int batchCnt) {
+    double proc = batchSize * batchCnt / (totalRows / 100D);
+    System.out.printf("progress: %.2f%%\n", proc);
+  }
 
-  void readValue() {
+  void readValue(String rowKey) {
     Configuration conf = getConf();
 
     HTable t1 = null;
     try {
       t1 = new HTable(conf, Bytes.toBytes("t1"));
 
-      String rowKey = "500451373768580";
       Get get = new Get(Bytes.toBytes(rowKey));
       long t = System.currentTimeMillis();
       Result res = t1.get(get);
