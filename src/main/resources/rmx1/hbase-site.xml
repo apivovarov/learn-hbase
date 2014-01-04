@@ -1,9 +1,7 @@
-<?xml version="1.0"?>
-<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <configuration>
   <property>
     <name>hbase.rootdir</name>
-    <value>hdfs://192.168.1.35:8020/hbase</value>
+    <value>hdfs://172.31.48.7:8020/hbase</value>
   </property>
   <property>
     <name>hbase.cluster.distributed</name>
@@ -11,7 +9,7 @@
   </property>
 <property>
   <name>hbase.zookeeper.quorum</name>
-  <value>192.168.1.35,192.168.1.47,192.168.1.51,192.168.1.55,192.168.1.61</value>
+  <value>172.31.52.71,172.31.48.8,172.31.48.7</value>
 </property>
 <property>
   <name>hbase.zookeeper.property.dataDir</name>

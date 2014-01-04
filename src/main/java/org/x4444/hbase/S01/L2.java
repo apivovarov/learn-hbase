@@ -26,7 +26,7 @@ public class L2 {
   static final int metricDiff = 100;
 
   static final long minTs = 1356998400;
-  static final int tsDiffMin = 466000;
+  static final int tsDiffMin = 0;
 
   static final boolean debug = false;
 
@@ -35,7 +35,7 @@ public class L2 {
   public static void main(String[] args) {
     final L2 l2 = new L2();
 
-    String op = "rm";
+    String op = "w";
 
     if (op.equals("rs")) {
       String rowKey = "500011358136240";
@@ -73,9 +73,9 @@ public class L2 {
           / (ts / 1000D));
     } else if (op.equals("w")) {
 
-      int nT = 1;
+      int nT = 10;
 
-      final int minToWrite = 10000;
+      final int minToWrite = 1000;
 
       Thread[] tt = new Thread[nT];
       for (int i = 0; i < nT; i++) {
@@ -237,8 +237,8 @@ public class L2 {
 
   Configuration getConf() {
     Configuration conf = HBaseConfiguration.create();
-    conf.addResource("core-site.xml");
-    conf.addResource("hbase-site.xml");
+    conf.addResource("rmx1/core-site.xml");
+    conf.addResource("rmx1/hbase-site.xml");
     String defaultFs = conf.get("fs.defaultFS");
     String rootDir = conf.get("hbase.rootdir");
     System.out.println(defaultFs);
