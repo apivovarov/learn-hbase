@@ -42,7 +42,7 @@ public class L2 {
     public static void main(String[] args) {
         final L2 l2 = new L2();
 
-        String op = "rm";
+        String op = "rs";
 
         if (op.equals("rs")) {
             String rowKey = "500021407734340";
