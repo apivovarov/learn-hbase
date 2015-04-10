@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.Get;
@@ -32,7 +33,7 @@ public class L2 {
     static final long startTsSec = 1388534400;
 
     // offset - # threads * min to write of prev run
-    static final int tsOffsetSec = 4*60;
+    static final int tsOffsetSec = 60 * 32 * 10000;
 
     static final boolean debug = false;
 
@@ -41,14 +42,14 @@ public class L2 {
     public static void main(String[] args) {
         final L2 l2 = new L2();
 
-        String op = "w";
+        String op = "rm";
 
         if (op.equals("rs")) {
-            String rowKey = "500011358136240";
+            String rowKey = "500021407734340";
             l2.readSingleValue(rowKey);
         } else if (op.equals("rm")) {
-            int nT = 5;
-            final int readN = 1000;
+            int nT = 10;
+            final int readN = 10000;
             Thread[] tt = new Thread[nT];
             for (int i = 0; i < nT; i++) {
                 tt[i] = new Thread() {
@@ -76,12 +77,12 @@ public class L2 {
             System.out.println("Reads in each Threads: " + readN);
             System.out.println("All Threads time ms: " + ts);
             System.out.printf("All Threads Get per sec: %.2f\n", nT * readN / (ts / 1000D));
-            System.out.printf("total rows: %,d", nT * readN);
+            System.out.printf("total rows: %,d\n", nT * readN);
         } else if (op.equals("w")) {
 
             int nT = 10;
 
-            final int minToWrite = 100;
+            final int minToWrite = 1000;
 
             Thread[] tt = new Thread[nT];
             for (int i = 0; i < nT; i++) {
@@ -114,7 +115,7 @@ public class L2 {
             System.out.println("All Threads time ms: " + ts);
             System.out.printf("All Threads Write per sec: %.2f\n", nT * minToWrite * metricN
                     / (ts / 1000D));
-            System.out.printf("total rows: %,d", nT * minToWrite * metricN);
+            System.out.printf("total rows: %,d\n", nT * minToWrite * metricN);
         }
     }
 
@@ -170,13 +171,7 @@ public class L2 {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            if (t1 != null) {
-                try {
-                    t1.close();
-                } catch (Exception e) {
-
-                }
-            }
+            IOUtils.closeQuietly(t1);
         }
         t = System.currentTimeMillis() - t;
         System.out.printf("Total exec time sec: %.2f\n", t / 1000D);
@@ -204,16 +199,6 @@ public class L2 {
         return t1;
     }
 
-    void closeHTable(HTable t) {
-        if (t != null) {
-            try {
-                t.close();
-            } catch (Exception e) {
-
-            }
-        }
-    }
-
     public void readSingleValue(String rowKey) {
         HTable t1 = null;
         try {
@@ -222,7 +207,7 @@ public class L2 {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            closeHTable(t1);
+            IOUtils.closeQuietly(t1);
         }
     }
 
@@ -266,8 +251,9 @@ public class L2 {
     }
 
     public void readRandomValues(int N) {
+        HTable t1 = null;
         try {
-            HTable t1 = getHTable();
+            t1 = getHTable();
             long maxGetTime = 0L;
             long minGetTime = Long.MAX_VALUE;
             long totalGetTime = 0L;
@@ -310,6 +296,8 @@ public class L2 {
             System.out.println("Total Run Time ms: " + totalRunTime);
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            IOUtils.closeQuietly(t1);
         }
     }
 }
