@@ -27,11 +27,12 @@ public class L2 {
 
     static final int minMetric = 50001;
 
-    static final int metricDiff = 100;
+    static final int metricN = 100;
 
-    static final long minTs = 1356998400;
+    static final long startTsSec = 1388534400;
 
-    static final int tsDiffMin = 120 * 5000 + 301000;
+    // offset - # threads * min to write of prev run
+    static final int tsOffsetSec = 4*60;
 
     static final boolean debug = false;
 
@@ -40,7 +41,7 @@ public class L2 {
     public static void main(String[] args) {
         final L2 l2 = new L2();
 
-        String op = "rm";
+        String op = "w";
 
         if (op.equals("rs")) {
             String rowKey = "500011358136240";
@@ -75,15 +76,16 @@ public class L2 {
             System.out.println("Reads in each Threads: " + readN);
             System.out.println("All Threads time ms: " + ts);
             System.out.printf("All Threads Get per sec: %.2f\n", nT * readN / (ts / 1000D));
+            System.out.printf("total rows: %,d", nT * readN);
         } else if (op.equals("w")) {
 
             int nT = 10;
 
-            final int minToWrite = 1000;
+            final int minToWrite = 100;
 
             Thread[] tt = new Thread[nT];
             for (int i = 0; i < nT; i++) {
-                final long jan = minTs + tsDiffMin + (i * minToWrite) * 60;
+                final long jan = startTsSec + tsOffsetSec + (i * minToWrite) * 60;
                 tt[i] = new Thread() {
                     public void run() {
                         L2 ll2 = new L2();
@@ -110,25 +112,26 @@ public class L2 {
             System.out.println("N of Threads: " + nT);
             System.out.println("min to write: " + minToWrite);
             System.out.println("All Threads time ms: " + ts);
-            System.out.printf("All Threads Write per sec: %.2f\n", nT * minToWrite * metricDiff
+            System.out.printf("All Threads Write per sec: %.2f\n", nT * minToWrite * metricN
                     / (ts / 1000D));
+            System.out.printf("total rows: %,d", nT * minToWrite * metricN);
         }
     }
 
     void writeValues(long startTime, int minutes, int batchSize) {
         Configuration conf = getConf();
 
-        List<Integer> metricIds = new ArrayList<Integer>(metricDiff);
-        for (int i = 0; i < metricDiff; i++) {
+        List<Integer> metricIds = new ArrayList<Integer>(metricN);
+        for (int i = 0; i < metricN; i++) {
             metricIds.add(minMetric + i);
         }
 
         long t = System.currentTimeMillis();
         HTable t1 = null;
-        long totalCnt = minutes * metricDiff;
+        long totalCnt = minutes * metricN;
         try {
             t1 = new HTable(conf, Bytes.toBytes("t1"));
-
+            System.out.println("StartTime: " + startTime);
             long time = startTime - 60L;
             List<Put> putLi = new ArrayList<Put>(batchSize * 2);
             int batchCnt = 0;
@@ -242,8 +245,9 @@ public class L2 {
 
     Configuration getConf() {
         Configuration conf = HBaseConfiguration.create();
-        conf.addResource("rmx1/core-site.xml");
-        conf.addResource("rmx1/hbase-site.xml");
+        conf.addResource("lc/core-site.xml");
+        conf.addResource("lc/hdfs-site.xml");
+        conf.addResource("lc/hbase-site.xml");
         String defaultFs = conf.get("fs.defaultFS");
         String rootDir = conf.get("hbase.rootdir");
         System.out.println(defaultFs);
@@ -255,8 +259,8 @@ public class L2 {
     }
 
     protected String getRandomKey() {
-        int p1 = minMetric + rnd.nextInt(metricDiff);
-        long p2 = minTs + rnd.nextInt(tsDiffMin) * 60L;
+        int p1 = minMetric + rnd.nextInt(metricN);
+        long p2 = startTsSec + rnd.nextInt(tsOffsetSec) * 60L;
         String key = "" + p1 + p2;
         return key;
     }
