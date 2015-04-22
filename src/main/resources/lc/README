@@ -1,0 +1,1 @@
+put core-site.xml  hbase-site.xml  hdfs-site.xml to this folder
